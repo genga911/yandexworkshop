@@ -1,6 +1,8 @@
 package storages
 
-import "github.com/genga911/yandexworkshop/cmd/shortener/heplers"
+import (
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
+)
 
 var Links *LinkStorage
 

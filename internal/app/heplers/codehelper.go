@@ -6,7 +6,7 @@ import (
 )
 
 const charset = "abcdefghijklmnopqrstuvwxyz" +
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 // Функция генерации короткого кода на основе rand
 func ShortCode(length int) string {
