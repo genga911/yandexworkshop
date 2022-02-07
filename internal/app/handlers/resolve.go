@@ -31,5 +31,5 @@ func Resolve(c *gin.Context) {
 		}
 	}
 
-	c.String(code, link)
+	c.Redirect(code, link)
 }
