@@ -13,10 +13,10 @@ import (
 )
 
 func TestResolve(t *testing.T) {
-	linkWithId := fmt.Sprintf("%s/%s", heplers.GetMainLink(), "AaSsDd")
+	linkWithID := fmt.Sprintf("%s/%s", heplers.GetMainLink(), "AaSsDd")
 	var emptyStore = storages.CreateLinkStorage()
 	var notEmptyStore = storages.CreateLinkStorage()
-	linkWithId = fmt.Sprintf("%s/%s", heplers.GetMainLink(), notEmptyStore.Create(linkWithId))
+	linkWithID = fmt.Sprintf("%s/%s", heplers.GetMainLink(), notEmptyStore.Create(linkWithID))
 
 	tests := []struct {
 		name  string
@@ -38,7 +38,7 @@ func TestResolve(t *testing.T) {
 		{
 			name:  "Ссылка в URL корректного формата",
 			want:  http.StatusTemporaryRedirect,
-			url:   linkWithId,
+			url:   linkWithID,
 			store: notEmptyStore,
 		},
 	}
@@ -53,6 +53,11 @@ func TestResolve(t *testing.T) {
 			_, err := ioutil.ReadAll(res.Body)
 			if err != nil {
 				t.Errorf("Ошибка %v", err)
+			}
+
+			errBodyClose := res.Body.Close()
+			if err != nil {
+				t.Errorf("Ошибка %v", errBodyClose)
 			}
 
 			assert.True(t, tt.want == res.StatusCode)

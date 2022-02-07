@@ -49,18 +49,23 @@ func TestStore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			reader := strings.NewReader(tt.link)
-			r, err := http.NewRequest(http.MethodPost, tt.url, reader)
-			if err != nil {
-				t.Errorf("Ошибка %v", err)
+			r, errWrite := http.NewRequest(http.MethodPost, tt.url, reader)
+			if errWrite != nil {
+				t.Errorf("Ошибка %v", errWrite)
 			}
 
 			c := mocks.MockGinContext(w, r, emptyStore)
 
 			Store(c)
 			res := w.Result()
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				t.Errorf("Ошибка %v", err)
+			body, errRead := ioutil.ReadAll(res.Body)
+			if errRead != nil {
+				t.Errorf("Ошибка %v", errRead)
+			}
+
+			errBodyClose := res.Body.Close()
+			if errBodyClose != nil {
+				t.Errorf("Ошибка %v", errBodyClose)
 			}
 
 			if tt.want.reg != nil {
