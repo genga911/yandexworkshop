@@ -10,7 +10,7 @@ const charset = "abcdefghijklmnopqrstuvwxyz" +
 
 // Функция генерации короткого кода на основе rand
 func ShortCode(length int) string {
-	var seededRand *rand.Rand = rand.New(
+	var seededRand = rand.New(
 		rand.NewSource(time.Now().UnixNano()))
 
 	b := make([]byte, length)
