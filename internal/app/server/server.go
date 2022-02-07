@@ -12,7 +12,7 @@ import (
 
 func SetUpServer() *gin.Engine {
 	router := gin.Default()
-	router.Use(middleware.ApiMiddleware(storages.Links))
+	router.Use(middleware.APIMiddleware(storages.Links))
 
 	router.GET("/:shortLink", handlers.Resolve)
 	router.POST("/", handlers.Store)

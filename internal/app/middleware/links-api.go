@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ApiMiddleware(store storages.Repository) gin.HandlerFunc {
+func APIMiddleware(store storages.Repository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("Store", store)
 		c.Next()
