@@ -3,10 +3,11 @@ package heplers
 import (
 	"errors"
 	"fmt"
-	"github.com/genga911/yandexworkshop/internal/app/constants"
 	"net/http"
 	"path"
 	"regexp"
+
+	"github.com/genga911/yandexworkshop/internal/app/constants"
 )
 
 // Возврат корня сайта

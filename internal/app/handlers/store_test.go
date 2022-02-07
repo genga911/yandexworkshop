@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
-	"github.com/genga911/yandexworkshop/internal/app/storages"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/storages"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStore(t *testing.T) {

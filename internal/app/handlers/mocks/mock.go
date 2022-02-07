@@ -1,10 +1,11 @@
 package mocks
 
 import (
-	"github.com/genga911/yandexworkshop/internal/app/storages"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/genga911/yandexworkshop/internal/app/storages"
+	"github.com/gin-gonic/gin"
 )
 
 // мокаем контекст для теста

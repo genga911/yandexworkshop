@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
-	"github.com/genga911/yandexworkshop/internal/app/storages"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/storages"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResolve(t *testing.T) {
