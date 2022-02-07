@@ -3,8 +3,8 @@ package heplers
 import (
 	"errors"
 	"fmt"
+	"github.com/genga911/yandexworkshop/internal/app/constants"
 	"net/http"
-	"os"
 	"path"
 	"regexp"
 )
@@ -13,9 +13,9 @@ import (
 func GetMainLink() string {
 	return fmt.Sprintf(
 		"%s://%s:%s",
-		os.Getenv("PROTOCOL"),
-		os.Getenv("HOST"),
-		os.Getenv("PORT"),
+		constants.PROTOCOL,
+		constants.HOST,
+		constants.PORT,
 	)
 }
 
@@ -35,7 +35,7 @@ func GetShortLink(req *http.Request) (string, error) {
 func GetServerAddress() string {
 	return fmt.Sprintf(
 		"%s:%s",
-		os.Getenv("HOST"),
-		os.Getenv("PORT"),
+		constants.HOST,
+		constants.PORT,
 	)
 }

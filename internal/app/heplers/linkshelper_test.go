@@ -1,22 +1,11 @@
 package heplers
 
 import (
-	"fmt"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
-
-func init() {
-	// подключаем тестовое окружение
-	err := godotenv.Load(os.ExpandEnv("$GOPATH/yandexworkshop/.env.testing"))
-	if err != nil {
-		fmt.Println("Ошибка загрузки .env: " + err.Error())
-	}
-}
 
 func TestGetShortLink(t *testing.T) {
 	tests := []struct {

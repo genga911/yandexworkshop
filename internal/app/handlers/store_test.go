@@ -1,28 +1,17 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"regexp"
 	"strings"
 	"testing"
 )
-
-func init() {
-	// подключаем тестовое окружение
-	err := godotenv.Load(os.ExpandEnv("$GOPATH/yandexworkshop/.env.testing"))
-	if err != nil {
-		fmt.Println("Ошибка загрузки .env: " + err.Error())
-	}
-}
 
 func TestStore(t *testing.T) {
 	var emptyStore = storages.CreateLinkStorage()
