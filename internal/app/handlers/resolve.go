@@ -1,22 +1,22 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
-	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
 )
 
 // псевдоредирект с короткого урла на длинный
-func Resolve(c *gin.Context) {
-	store := c.MustGet("Store").(storages.Repository)
+func Resolve(rh *RouterHandlers, c *gin.Context) {
 	// ссылка поумолчанию на корень сайта
-	link := heplers.GetMainLink()
+	link := config.GetMainLink()
 	// поумолчанию выставим код 404
 	code := http.StatusNotFound
-	shortLink, err := heplers.GetShortLink(c.Request)
-
+	shortLink, err := heplers.GetShortLink(c)
+	fmt.Println(err)
 	// в случае ошибки отправим пользователю 400 код и редиректим его на главную
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -25,7 +25,7 @@ func Resolve(c *gin.Context) {
 
 	if shortLink != "" {
 		// проверим что ссылка есть в Storage
-		link = store.FindByValue(shortLink)
+		link = rh.Storage.FindByValue(shortLink)
 		if link != "" {
 			code = http.StatusTemporaryRedirect
 		}

@@ -3,21 +3,19 @@ package server
 import (
 	"fmt"
 
+	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/handlers"
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
-	"github.com/genga911/yandexworkshop/internal/app/middleware"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
 )
 
 func SetUpServer() *gin.Engine {
+	rooterHandlers := handlers.RouterHandlers{Storage: storages.CreateLinkStorage()}
 	router := gin.Default()
-	router.Use(middleware.APIMiddleware(storages.Links))
+	router.GET("/:code", rooterHandlers.GetHandler)
+	router.POST("/", rooterHandlers.PostHandler)
 
-	router.GET("/:shortLink", handlers.Resolve)
-	router.POST("/", handlers.Store)
-
-	err := router.Run(heplers.GetServerAddress())
+	err := router.Run(config.GetServerAddress())
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -8,14 +8,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/config"
+	"github.com/genga911/yandexworkshop/internal/app/mocks"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStore(t *testing.T) {
 	var emptyStore = storages.CreateLinkStorage()
+	var emptyRouterHandler = RouterHandlers{Storage: emptyStore}
+
 	type want struct {
 		reg  *regexp.Regexp
 		code int
@@ -29,16 +31,16 @@ func TestStore(t *testing.T) {
 	}{
 		{
 			name: "Тест получения короткой ссылки",
-			url:  heplers.GetMainLink(),
+			url:  config.GetMainLink(),
 			link: "http://example.com",
 			want: want{
-				reg:  regexp.MustCompile(heplers.GetMainLink() + `/[a-zA-Z]{8}$`),
+				reg:  regexp.MustCompile(config.GetMainLink() + `/[a-zA-Z]{8}$`),
 				code: http.StatusCreated,
 			},
 		},
 		{
 			name: "Тест получения короткой ссылки",
-			url:  heplers.GetMainLink(),
+			url:  config.GetMainLink(),
 			link: "example-com",
 			want: want{
 				reg:  nil,
@@ -55,9 +57,9 @@ func TestStore(t *testing.T) {
 				t.Errorf("Ошибка %v", errWrite)
 			}
 
-			c := mocks.MockGinContext(w, r, emptyStore)
+			c := mocks.MockGinContext(w, r, nil)
 
-			Store(c)
+			Store(&emptyRouterHandler, c)
 			res := w.Result()
 			body, errRead := ioutil.ReadAll(res.Body)
 			if errRead != nil {

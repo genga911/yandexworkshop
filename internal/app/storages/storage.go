@@ -4,8 +4,6 @@ import (
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 )
 
-var Links *LinkStorage
-
 type Repository interface {
 	FindByValue(value string) string
 	FindByKey(key string) string
@@ -14,13 +12,6 @@ type Repository interface {
 
 type LinkStorage struct {
 	store map[string]string
-}
-
-// инициализация хранилища
-func init() {
-	if Links == nil {
-		Links = CreateLinkStorage()
-	}
 }
 
 // Создание пустого хранилища

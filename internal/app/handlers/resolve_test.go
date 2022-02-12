@@ -7,48 +7,63 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/genga911/yandexworkshop/internal/app/handlers/mocks"
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/config"
+	"github.com/genga911/yandexworkshop/internal/app/mocks"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestResolve(t *testing.T) {
-	linkWithID := fmt.Sprintf("%s/%s", heplers.GetMainLink(), "AaSsDd")
+	linkWithCode := fmt.Sprintf("%s/%s", config.GetMainLink(), "AaSsDd")
 	var emptyStore = storages.CreateLinkStorage()
 	var notEmptyStore = storages.CreateLinkStorage()
-	linkWithID = fmt.Sprintf("%s/%s", heplers.GetMainLink(), notEmptyStore.Create(linkWithID))
+	var emptyRouterHandler = RouterHandlers{Storage: emptyStore}
+	var notEmptyRouterHandler = RouterHandlers{Storage: notEmptyStore}
+	code := notEmptyStore.Create(linkWithCode)
+	linkWithCode = fmt.Sprintf("%s/%s", config.GetMainLink(), code)
 
 	tests := []struct {
-		name  string
-		want  int
-		url   string
-		store *storages.LinkStorage
+		name string
+		want int
+		url  string
+		code string
+		rh   *RouterHandlers
 	}{
 		{
-			name:  "Нет ссылки в URL",
-			want:  http.StatusBadRequest,
-			url:   heplers.GetMainLink(),
-			store: emptyStore,
+			name: "Нет ссылки в URL",
+			want: http.StatusBadRequest,
+			url:  config.GetMainLink(),
+			code: "",
+			rh:   &emptyRouterHandler,
 		},
 		{
 			name: "Ссылка в URL не корректного формата",
 			want: http.StatusBadRequest,
-			url:  fmt.Sprintf("%s/%s", heplers.GetMainLink(), "123456/789"),
+			url:  fmt.Sprintf("%s/%s", config.GetMainLink(), "123456/789"),
+			code: "",
 		},
 		{
-			name:  "Ссылка в URL корректного формата",
-			want:  http.StatusTemporaryRedirect,
-			url:   linkWithID,
-			store: notEmptyStore,
+			name: "Ссылка в URL корректного формата",
+			want: http.StatusTemporaryRedirect,
+			url:  linkWithCode,
+			code: code,
+			rh:   &notEmptyRouterHandler,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, tt.url, nil)
-			c := mocks.MockGinContext(w, r, tt.store)
-			Resolve(c)
+
+			var params []gin.Param
+			params = append(params, gin.Param{
+				Key:   "code",
+				Value: tt.code,
+			})
+
+			c := mocks.MockGinContext(w, r, params)
+			Resolve(tt.rh, c)
 			res := w.Result()
 
 			_, err := ioutil.ReadAll(res.Body)

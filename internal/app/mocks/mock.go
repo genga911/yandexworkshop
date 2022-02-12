@@ -4,15 +4,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
 )
 
 // мокаем контекст для теста
-func MockGinContext(w *httptest.ResponseRecorder, r *http.Request, store storages.Repository) *gin.Context {
+func MockGinContext(w *httptest.ResponseRecorder, r *http.Request, params []gin.Param) *gin.Context {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = r
-	c.Set("Store", store)
+	if params != nil {
+		c.Params = params
+	}
 
 	return c
 }

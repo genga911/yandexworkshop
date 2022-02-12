@@ -6,15 +6,12 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
-	"github.com/genga911/yandexworkshop/internal/app/storages"
+	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/gin-gonic/gin"
 )
 
 // мохранение нового урла в хранилище
-func Store(c *gin.Context) {
-	store := c.MustGet("Store").(storages.Repository)
-
+func Store(rh *RouterHandlers, c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -28,11 +25,11 @@ func Store(c *gin.Context) {
 		return
 	}
 
-	shortLink := store.Create(link.String())
+	shortLink := rh.Storage.Create(link.String())
 
 	shortedLink := fmt.Sprintf(
 		"%s/%s",
-		heplers.GetMainLink(),
+		config.GetMainLink(),
 		shortLink,
 	)
 
