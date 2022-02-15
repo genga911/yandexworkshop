@@ -16,7 +16,7 @@ import (
 
 func TestStore(t *testing.T) {
 	var emptyStore = storages.CreateLinkStorage()
-	var emptyRouterHandler = RouterHandlers{Storage: emptyStore}
+	var emptyRouterHandler = PostHandlers{Storage: emptyStore}
 
 	type want struct {
 		reg  *regexp.Regexp

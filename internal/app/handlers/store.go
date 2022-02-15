@@ -11,7 +11,7 @@ import (
 )
 
 // мохранение нового урла в хранилище
-func Store(rh *RouterHandlers, c *gin.Context) {
+func Store(ph *PostHandlers, c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -25,7 +25,7 @@ func Store(rh *RouterHandlers, c *gin.Context) {
 		return
 	}
 
-	shortLink := rh.Storage.Create(link.String())
+	shortLink := ph.Storage.Create(link.String())
 
 	shortedLink := fmt.Sprintf(
 		"%s/%s",

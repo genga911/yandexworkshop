@@ -10,10 +10,13 @@ import (
 )
 
 func SetUpServer() *gin.Engine {
-	rooterHandlers := handlers.RouterHandlers{Storage: storages.CreateLinkStorage()}
+	store := storages.CreateLinkStorage()
+	getHandlers := handlers.GetHandlers{Storage: store}
+	postHandlers := handlers.PostHandlers{Storage: store}
+
 	router := gin.Default()
-	router.GET("/:code", rooterHandlers.GetHandler)
-	router.POST("/", rooterHandlers.PostHandler)
+	router.GET("/:code", getHandlers.GetHandler)
+	router.POST("/", postHandlers.PostHandler)
 
 	err := router.Run(config.GetServerAddress())
 	if err != nil {

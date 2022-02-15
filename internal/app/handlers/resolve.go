@@ -10,7 +10,7 @@ import (
 )
 
 // псевдоредирект с короткого урла на длинный
-func Resolve(rh *RouterHandlers, c *gin.Context) {
+func Resolve(gh *GetHandlers, c *gin.Context) {
 	// ссылка поумолчанию на корень сайта
 	link := config.GetMainLink()
 	// поумолчанию выставим код 404
@@ -25,7 +25,7 @@ func Resolve(rh *RouterHandlers, c *gin.Context) {
 
 	if shortLink != "" {
 		// проверим что ссылка есть в Storage
-		link = rh.Storage.FindByValue(shortLink)
+		link = gh.Storage.FindByValue(shortLink)
 		if link != "" {
 			code = http.StatusTemporaryRedirect
 		}

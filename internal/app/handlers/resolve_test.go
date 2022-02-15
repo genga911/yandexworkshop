@@ -18,8 +18,8 @@ func TestResolve(t *testing.T) {
 	linkWithCode := fmt.Sprintf("%s/%s", config.GetMainLink(), "AaSsDd")
 	var emptyStore = storages.CreateLinkStorage()
 	var notEmptyStore = storages.CreateLinkStorage()
-	var emptyRouterHandler = RouterHandlers{Storage: emptyStore}
-	var notEmptyRouterHandler = RouterHandlers{Storage: notEmptyStore}
+	var emptyRouterHandler = GetHandlers{Storage: emptyStore}
+	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore}
 	code := notEmptyStore.Create(linkWithCode)
 	linkWithCode = fmt.Sprintf("%s/%s", config.GetMainLink(), code)
 
@@ -28,7 +28,7 @@ func TestResolve(t *testing.T) {
 		want int
 		url  string
 		code string
-		rh   *RouterHandlers
+		rh   *GetHandlers
 	}{
 		{
 			name: "Нет ссылки в URL",
