@@ -32,7 +32,7 @@ func CreateLinkStorage(cfg *config.Params) (*LinkStorage, error) {
 	ls.file = nil
 
 	if cfg.FileStoragePath != "" {
-		fullFilePath := fmt.Sprintf("%s/%s", strings.TrimRight(cfg.FileStoragePath, "/"), cfg.FileStorageName)
+		fullFilePath := fmt.Sprintf("%s", strings.TrimRight(cfg.FileStoragePath, "/"))
 		var file *os.File
 		// проверим существует ли файл
 		if _, err := os.Stat(fullFilePath); err == nil {
