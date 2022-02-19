@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,14 +40,14 @@ func Store(ph *PostHandlers, c *gin.Context) {
 
 	shortedLink := fmt.Sprintf(
 		"%s/%s",
-		config.GetMainLink(),
+		ph.Config.BaseURL,
 		shortLink,
 	)
 
 	c.String(http.StatusCreated, shortedLink)
 }
 
-func StoreFromJSON(ph *PostShortenHandlers, c *gin.Context) {
+func StoreFromJSON(phs *PostShortenHandlers, c *gin.Context) {
 	body := JSONBody{}
 	err := c.ShouldBindJSON(&body)
 	result := JSONResult{}
@@ -68,11 +67,11 @@ func StoreFromJSON(ph *PostShortenHandlers, c *gin.Context) {
 		return
 	}
 
-	shortLink := ph.Storage.Create(body.URL)
+	shortLink := phs.Storage.Create(body.URL)
 
 	shortedLink := fmt.Sprintf(
 		"%s/%s",
-		config.GetMainLink(),
+		phs.Config.BaseURL,
 		shortLink,
 	)
 

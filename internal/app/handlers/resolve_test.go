@@ -15,13 +15,16 @@ import (
 )
 
 func TestResolve(t *testing.T) {
-	linkWithCode := fmt.Sprintf("%s/%s", config.GetMainLink(), "AaSsDd")
+	cfg := config.GetConfig()
+	linkWithCode := fmt.Sprintf("%s/%s", cfg.BaseURL, "AaSsDd")
 	var emptyStore = storages.CreateLinkStorage()
 	var notEmptyStore = storages.CreateLinkStorage()
-	var emptyRouterHandler = GetHandlers{Storage: emptyStore}
-	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore}
+
+	var emptyRouterHandler = GetHandlers{Storage: emptyStore, Config: &cfg}
+	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore, Config: &cfg}
+
 	code := notEmptyStore.Create(linkWithCode)
-	linkWithCode = fmt.Sprintf("%s/%s", config.GetMainLink(), code)
+	linkWithCode = fmt.Sprintf("%s/%s", cfg.BaseURL, code)
 
 	tests := []struct {
 		name string
@@ -33,15 +36,16 @@ func TestResolve(t *testing.T) {
 		{
 			name: "Нет ссылки в URL",
 			want: http.StatusBadRequest,
-			url:  config.GetMainLink(),
+			url:  cfg.BaseURL,
 			code: "",
 			rh:   &emptyRouterHandler,
 		},
 		{
 			name: "Ссылка в URL не корректного формата",
 			want: http.StatusBadRequest,
-			url:  fmt.Sprintf("%s/%s", config.GetMainLink(), "123456/789"),
+			url:  fmt.Sprintf("%s/%s", cfg.BaseURL, "/123456/789"),
 			code: "",
+			rh:   &emptyRouterHandler,
 		},
 		{
 			name: "Ссылка в URL корректного формата",

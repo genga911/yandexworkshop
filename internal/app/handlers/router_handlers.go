@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
 )
@@ -8,14 +9,17 @@ import (
 type (
 	GetHandlers struct {
 		Storage storages.Repository
+		Config  *config.Params
 	}
 
 	PostHandlers struct {
 		Storage storages.Repository
+		Config  *config.Params
 	}
 
 	PostShortenHandlers struct {
 		Storage storages.Repository
+		Config  *config.Params
 	}
 )
 

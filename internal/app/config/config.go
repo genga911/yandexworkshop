@@ -1,26 +1,23 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
 
-const HOST = "localhost"
-const PORT = "8080"
-const PROTOCOL = "http"
+	"github.com/caarlos0/env/v6"
+)
 
-// Возврат корня сайта
-func GetMainLink() string {
-	return fmt.Sprintf(
-		"%s://%s:%s",
-		PROTOCOL,
-		HOST,
-		PORT,
-	)
+type Params struct {
+	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+	BaseURL       string `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
 }
 
-// адрес для запуска сервера, без протокола
-func GetServerAddress() string {
-	return fmt.Sprintf(
-		"%s:%s",
-		HOST,
-		PORT,
-	)
+func GetConfig() Params {
+	var cfg = Params{}
+
+	err := env.Parse(&cfg)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return cfg
 }

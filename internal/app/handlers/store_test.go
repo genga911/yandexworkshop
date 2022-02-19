@@ -29,12 +29,13 @@ type DefaultStoreTest struct {
 
 // набор данных повторяется, так что его можно вынести из тестов
 func testsProvider() []DefaultStoreTest {
+	cfg := config.GetConfig()
 	return []DefaultStoreTest{
 		{
 			name: "Success тест получения короткой ссылки",
 			link: "http://example.com",
 			want: DefaultWant{
-				reg:  regexp.MustCompile(config.GetMainLink() + `/[a-zA-Z]{8}$`),
+				reg:  regexp.MustCompile(cfg.BaseURL + `/[a-zA-Z]{8}$`),
 				code: http.StatusCreated,
 			},
 		},
@@ -50,8 +51,9 @@ func testsProvider() []DefaultStoreTest {
 }
 
 func TestStore(t *testing.T) {
+	cfg := config.GetConfig()
 	var emptyStore = storages.CreateLinkStorage()
-	var emptyRouterHandler = PostHandlers{Storage: emptyStore}
+	var emptyRouterHandler = PostHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()
 
@@ -59,7 +61,7 @@ func TestStore(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			reader := strings.NewReader(tt.link)
-			r, errWrite := http.NewRequest(http.MethodPost, config.GetMainLink(), reader)
+			r, errWrite := http.NewRequest(http.MethodPost, cfg.BaseURL, reader)
 			if errWrite != nil {
 				t.Errorf("Ошибка %v", errWrite)
 			}
@@ -88,8 +90,9 @@ func TestStore(t *testing.T) {
 }
 
 func TestStoreFromJson(t *testing.T) {
+	cfg := config.GetConfig()
 	var emptyStore = storages.CreateLinkStorage()
-	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore}
+	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()
 
@@ -101,7 +104,7 @@ func TestStoreFromJson(t *testing.T) {
 			jsonString, _ := json.Marshal(requestBody)
 			reader := strings.NewReader(string(jsonString))
 
-			r, errWrite := http.NewRequest(http.MethodPost, config.GetMainLink()+"/api/shorten", reader)
+			r, errWrite := http.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten", reader)
 			if errWrite != nil {
 				t.Errorf("Ошибка %v", errWrite)
 			}
