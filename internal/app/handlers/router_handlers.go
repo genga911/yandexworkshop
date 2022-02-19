@@ -8,17 +8,17 @@ import (
 
 type (
 	GetHandlers struct {
-		Storage storages.Repository
+		Storage *storages.LinkStorage
 		Config  *config.Params
 	}
 
 	PostHandlers struct {
-		Storage storages.Repository
+		Storage *storages.LinkStorage
 		Config  *config.Params
 	}
 
 	PostShortenHandlers struct {
-		Storage storages.Repository
+		Storage *storages.LinkStorage
 		Config  *config.Params
 	}
 )

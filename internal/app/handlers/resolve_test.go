@@ -15,10 +15,10 @@ import (
 )
 
 func TestResolve(t *testing.T) {
-	cfg := config.GetConfig()
+	cfg, _ := config.GetConfig()
 	linkWithCode := fmt.Sprintf("%s/%s", cfg.BaseURL, "AaSsDd")
-	var emptyStore = storages.CreateLinkStorage()
-	var notEmptyStore = storages.CreateLinkStorage()
+	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var notEmptyStore, _ = storages.CreateLinkStorage(&cfg)
 
 	var emptyRouterHandler = GetHandlers{Storage: emptyStore, Config: &cfg}
 	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore, Config: &cfg}
