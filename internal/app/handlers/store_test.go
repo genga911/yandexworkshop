@@ -29,7 +29,7 @@ type DefaultStoreTest struct {
 
 // набор данных повторяется, так что его можно вынести из тестов
 func testsProvider() []DefaultStoreTest {
-	cfg := config.GetConfig()
+	cfg, _ := config.GetConfig()
 	return []DefaultStoreTest{
 		{
 			name: "Success тест получения короткой ссылки",
@@ -51,8 +51,8 @@ func testsProvider() []DefaultStoreTest {
 }
 
 func TestStore(t *testing.T) {
-	cfg := config.GetConfig()
-	var emptyStore = storages.CreateLinkStorage()
+	cfg, _ := config.GetConfig()
+	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
 	var emptyRouterHandler = PostHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()
@@ -90,8 +90,8 @@ func TestStore(t *testing.T) {
 }
 
 func TestStoreFromJson(t *testing.T) {
-	cfg := config.GetConfig()
-	var emptyStore = storages.CreateLinkStorage()
+	cfg, _ := config.GetConfig()
+	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
 	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()

@@ -10,8 +10,20 @@ import (
 )
 
 func SetUpServer() *gin.Engine {
-	cfg := config.GetConfig()
-	store := storages.CreateLinkStorage()
+	cfg, cfgError := config.GetConfig()
+	if cfgError != nil {
+		fmt.Println(cfgError)
+		panic(cfgError)
+	}
+
+	store, storeError := storages.CreateLinkStorage(&cfg)
+	if storeError != nil {
+		fmt.Println(storeError)
+		panic(storeError)
+	}
+	// по окончанию удалим стор.
+	defer store.Destroy()
+
 	getHandlers := handlers.GetHandlers{Storage: store, Config: &cfg}
 	postHandlers := handlers.PostHandlers{Storage: store, Config: &cfg}
 	postShortenHandlers := handlers.PostShortenHandlers{Storage: store, Config: &cfg}
@@ -24,6 +36,7 @@ func SetUpServer() *gin.Engine {
 	err := router.Run(cfg.ServerAddress)
 	if err != nil {
 		fmt.Println(err)
+		panic(err)
 	}
 
 	return router

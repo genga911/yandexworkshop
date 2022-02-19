@@ -1,6 +1,13 @@
 package storages
 
 import (
+	"bufio"
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 )
 
@@ -11,14 +18,62 @@ type Repository interface {
 }
 
 type LinkStorage struct {
-	store map[string]string
+	store        map[string]string
+	file         *os.File
+	writer       *bufio.Writer
+	rowsInBuffer int
 }
 
 // Создание пустого хранилища
-func CreateLinkStorage() *LinkStorage {
+func CreateLinkStorage(cfg *config.Params) (*LinkStorage, error) {
 	var ls LinkStorage
 	ls.store = make(map[string]string)
-	return &ls
+	ls.rowsInBuffer = 0
+	ls.file = nil
+
+	if cfg.FileStoragePath != "" {
+		fullFilePath := fmt.Sprintf("%s/%s", strings.TrimRight(cfg.FileStoragePath, "/"), cfg.FileStorageName)
+		var file *os.File
+		// проверим существует ли файл
+		if _, err := os.Stat(fullFilePath); err == nil {
+			oFile, openFileError := os.OpenFile(fullFilePath, os.O_RDWR, os.ModeAppend)
+			if openFileError != nil {
+				return nil, openFileError
+			}
+			file = oFile
+		} else if errors.Is(err, os.ErrNotExist) {
+			// проверим директорию
+			_, errDir := os.Stat(cfg.FileStoragePath)
+			// Если директории нет, попытаемся создать, иначе пропустим этот шаг и перейдем к созданию файла
+			if errDir != nil {
+				if errors.Is(errDir, os.ErrNotExist) {
+					mkDirError := os.Mkdir(cfg.FileStoragePath, os.ModeDir)
+					if mkDirError != nil {
+						return nil, mkDirError
+					}
+				}
+			} else {
+				return nil, errDir
+			}
+
+			// Создадим файл
+			cFile, createFileError := os.Create(fullFilePath)
+			if createFileError != nil {
+				return nil, createFileError
+			}
+
+			file = cFile
+		} else {
+			// в случае другой ошибки
+			return nil, err
+		}
+
+		ls.file = file
+		ls.writer = bufio.NewWriter(ls.file)
+		ls.loadFromFile()
+	}
+
+	return &ls, nil
 }
 
 // возврат длинной ссылке по значению короткой
@@ -40,12 +95,61 @@ func (ls *LinkStorage) FindByKey(key string) string {
 // Создание записи для длинной и короткой ссылок
 func (ls *LinkStorage) Create(key string) string {
 	shortLink, ok := ls.store[key]
-
 	// Если ключа нет, создадим и сохраним короткую ссылку
 	if !ok {
 		shortLink = heplers.ShortCode(8)
 		ls.store[key] = shortLink
+		// Если у нас есть файл, допишем ссылку в него
+		if ls.file != nil {
+			appendError := ls.appendToFile(key, shortLink)
+			if appendError != nil {
+				fmt.Println(appendError)
+			}
+		}
 	}
 
 	return shortLink
+}
+
+// Загрузка map из файла
+func (ls *LinkStorage) loadFromFile() {
+	scanner := bufio.NewScanner(ls.file)
+	for scanner.Scan() {
+		// данные храним в csv, для простоты разделяем через ,
+		s := strings.Split(scanner.Text(), ",")
+		ls.store[s[0]] = s[1]
+	}
+}
+
+// запись в конец файла
+func (ls *LinkStorage) appendToFile(key string, value string) error {
+	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s", key, value))
+
+	// чтобы не нагружать память сервера, будем записывать в файл например по 10 записей
+	ls.rowsInBuffer++
+	if ls.rowsInBuffer >= 10 {
+
+	}
+
+	return err
+}
+
+// раз уж мы работаем с файлами, следует завести деструктор
+func (ls *LinkStorage) Destroy() {
+	if ls.file != nil {
+		ls.commit()
+		err := ls.file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (ls *LinkStorage) commit() {
+	// сохраним изменения из буфера если такие остались
+	flushError := ls.writer.Flush()
+	if flushError != nil {
+		panic(flushError)
+	}
+	ls.rowsInBuffer = 0
 }
