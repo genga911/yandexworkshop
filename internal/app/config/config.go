@@ -1,6 +1,8 @@
 package config
 
 import (
+	"flag"
+
 	"github.com/caarlos0/env/v6"
 )
 
@@ -17,6 +19,21 @@ func GetConfig() (Params, error) {
 	if err != nil {
 		return cfg, err
 	}
+
+	// теперь обработаем флаги, заменим значения в конфиге
+	// это костыль для инкремента 2, так как при запуске тестов флаг "а" используется, вызов StringVar вызывает ошибку
+	// panic: /tmp/go-build3078548901/b184/handlers.test flag redefined: a [recovered]
+	if flag.Lookup("a") == nil {
+		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "a string")
+	}
+	if flag.Lookup("b") == nil {
+		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "a string")
+	}
+	if flag.Lookup("f") == nil {
+		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "a string")
+	}
+
+	flag.Parse()
 
 	return cfg, nil
 }
