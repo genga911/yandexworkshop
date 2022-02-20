@@ -21,8 +21,6 @@ func SetUpServer() *gin.Engine {
 		fmt.Println(storeError)
 		panic(storeError)
 	}
-	// по окончанию удалим стор.
-	defer store.Destroy()
 
 	getHandlers := handlers.GetHandlers{Storage: store, Config: &cfg}
 	postHandlers := handlers.PostHandlers{Storage: store, Config: &cfg}

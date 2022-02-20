@@ -18,17 +18,15 @@ type Repository interface {
 }
 
 type LinkStorage struct {
-	store        map[string]string
-	file         *os.File
-	writer       *bufio.Writer
-	rowsInBuffer int
+	store  map[string]string
+	file   *os.File
+	writer *bufio.Writer
 }
 
 // Создание пустого хранилища
 func CreateLinkStorage(cfg *config.Params) (*LinkStorage, error) {
 	var ls LinkStorage
 	ls.store = make(map[string]string)
-	ls.rowsInBuffer = 0
 	ls.file = nil
 
 	if cfg.FileStoragePath != "" {
@@ -107,26 +105,9 @@ func (ls *LinkStorage) loadFromFile() {
 
 // запись в конец файла
 func (ls *LinkStorage) appendToFile(key string, value string) error {
-	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s\n", key, value))
-
 	// чтобы не нагружать память сервера, будем записывать в файл например по 10 записей
-	ls.rowsInBuffer++
-	if ls.rowsInBuffer >= 10 {
-
-	}
-
+	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s\n", key, value))
 	return err
-}
-
-// раз уж мы работаем с файлами, следует завести деструктор
-func (ls *LinkStorage) Destroy() {
-	if ls.file != nil {
-		ls.commit()
-		err := ls.file.Close()
-		if err != nil {
-			panic(err)
-		}
-	}
 }
 
 func (ls *LinkStorage) commit() {
@@ -135,5 +116,4 @@ func (ls *LinkStorage) commit() {
 	if flushError != nil {
 		panic(flushError)
 	}
-	ls.rowsInBuffer = 0
 }
