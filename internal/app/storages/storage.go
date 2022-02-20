@@ -32,36 +32,20 @@ func CreateLinkStorage(cfg *config.Params) (*LinkStorage, error) {
 	ls.file = nil
 
 	if cfg.FileStoragePath != "" {
-		fullFilePath := fmt.Sprintf("%s", strings.TrimRight(cfg.FileStoragePath, "/"))
 		var file *os.File
 		// проверим существует ли файл
-		if _, err := os.Stat(fullFilePath); err == nil {
-			oFile, openFileError := os.OpenFile(fullFilePath, os.O_RDWR, os.ModeAppend)
+		if _, err := os.Stat(cfg.FileStoragePath); err == nil {
+			oFile, openFileError := os.OpenFile(cfg.FileStoragePath, os.O_RDWR, os.ModeAppend)
 			if openFileError != nil {
 				return nil, openFileError
 			}
 			file = oFile
 		} else if errors.Is(err, os.ErrNotExist) {
-			// проверим директорию
-			_, errDir := os.Stat(cfg.FileStoragePath)
-			// Если директории нет, попытаемся создать, иначе пропустим этот шаг и перейдем к созданию файла
-			if errDir != nil {
-				if errors.Is(errDir, os.ErrNotExist) {
-					mkDirError := os.Mkdir(cfg.FileStoragePath, os.ModeDir)
-					if mkDirError != nil {
-						return nil, mkDirError
-					}
-				}
-			} else {
-				return nil, errDir
-			}
-
 			// Создадим файл
-			cFile, createFileError := os.Create(fullFilePath)
+			cFile, createFileError := os.Create(cfg.FileStoragePath)
 			if createFileError != nil {
 				return nil, createFileError
 			}
-
 			file = cFile
 		} else {
 			// в случае другой ошибки
@@ -123,7 +107,7 @@ func (ls *LinkStorage) loadFromFile() {
 
 // запись в конец файла
 func (ls *LinkStorage) appendToFile(key string, value string) error {
-	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s", key, value))
+	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s\n", key, value))
 
 	// чтобы не нагружать память сервера, будем записывать в файл например по 10 записей
 	ls.rowsInBuffer++
