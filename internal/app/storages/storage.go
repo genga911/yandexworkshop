@@ -109,11 +109,3 @@ func (ls *LinkStorage) appendToFile(key string, value string) error {
 	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s\n", key, value))
 	return err
 }
-
-func (ls *LinkStorage) commit() {
-	// сохраним изменения из буфера если такие остались
-	flushError := ls.writer.Flush()
-	if flushError != nil {
-		panic(flushError)
-	}
-}
