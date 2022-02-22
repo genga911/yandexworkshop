@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
@@ -18,9 +19,10 @@ type Repository interface {
 }
 
 type LinkStorage struct {
-	store  map[string]string
-	file   *os.File
-	writer *bufio.Writer
+	store      map[string]string
+	storeMutex sync.Mutex
+	file       *os.File
+	writer     *bufio.Writer
 }
 
 // Создание пустого хранилища
@@ -70,16 +72,21 @@ func (ls *LinkStorage) FindByValue(value string) string {
 }
 
 // Возврат короткой ссылки по ключу
-func (ls *LinkStorage) FindByKey(key string) string {
-	return ls.store[key]
+func (ls *LinkStorage) FindByKey(key string) (string, bool) {
+	ls.storeMutex.Lock()
+	defer ls.storeMutex.Unlock()
+	val, ok := ls.store[key]
+	return val, ok
 }
 
 // Создание записи для длинной и короткой ссылок
 func (ls *LinkStorage) Create(key string) string {
-	shortLink, ok := ls.store[key]
+	shortLink, ok := ls.FindByKey(key)
 	// Если ключа нет, создадим и сохраним короткую ссылку
 	if !ok {
 		shortLink = heplers.ShortCode(8)
+		ls.storeMutex.Lock()
+		defer ls.storeMutex.Unlock()
 		ls.store[key] = shortLink
 		// Если у нас есть файл, допишем ссылку в него
 		if ls.file != nil {
