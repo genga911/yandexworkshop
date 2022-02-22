@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +11,7 @@ import (
 // псевдоредирект с короткого урла на длинный
 func Resolve(gh *GetHandlers, c *gin.Context) {
 	// ссылка поумолчанию на корень сайта
-	link := config.GetMainLink()
+	link := gh.Config.BaseURL
 	// поумолчанию выставим код 404
 	code := http.StatusNotFound
 	shortLink, err := heplers.GetShortLink(c)
