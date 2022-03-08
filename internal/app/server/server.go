@@ -5,6 +5,7 @@ import (
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/handlers"
+	"github.com/genga911/yandexworkshop/internal/app/middleware"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +28,7 @@ func SetUpServer() *gin.Engine {
 	postShortenHandlers := handlers.PostShortenHandlers{Storage: store, Config: &cfg}
 
 	router := gin.Default()
+	router.Use(middleware.Gzip)
 	router.GET("/:code", getHandlers.GetHandler)
 	router.POST("/", postHandlers.PostHandler)
 	router.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
