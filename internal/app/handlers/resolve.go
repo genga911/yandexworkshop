@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/session"
 	"github.com/gin-gonic/gin"
 )
 
 // псевдоредирект с короткого урла на длинный
 func Resolve(gh *GetHandlers, c *gin.Context) {
+	s := session.GetSession(c)
 	// ссылка поумолчанию на корень сайта
 	link := gh.Config.BaseURL
 	// поумолчанию выставим код 404
@@ -24,11 +26,16 @@ func Resolve(gh *GetHandlers, c *gin.Context) {
 
 	if shortLink != "" {
 		// проверим что ссылка есть в Storage
-		link = gh.Storage.FindByValue(shortLink)
-		if link != "" {
+		finded := gh.Storage.FindByValue(shortLink, s.UserID)
+		if !finded.IsEmpty() {
 			code = http.StatusTemporaryRedirect
+			link = finded.OriginalURL
 		}
 	}
 
-	c.Redirect(code, link)
+	if code != http.StatusNotFound {
+		c.Redirect(code, link)
+	} else {
+		c.Status(http.StatusNotFound)
+	}
 }

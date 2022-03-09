@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/session"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,6 +24,7 @@ type (
 
 // cохранение нового урла в хранилище
 func Store(ph *PostHandlers, c *gin.Context) {
+	s := session.GetSession(c)
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -36,18 +38,13 @@ func Store(ph *PostHandlers, c *gin.Context) {
 		return
 	}
 
-	shortLink := ph.Storage.Create(link.String())
+	shortLink := ph.Storage.Create(link.String(), s.UserID)
 
-	shortedLink := fmt.Sprintf(
-		"%s/%s",
-		ph.Config.BaseURL,
-		shortLink,
-	)
-
-	c.String(http.StatusCreated, shortedLink)
+	c.String(http.StatusCreated, heplers.PrepareShortLink(shortLink.ShortURL, ph.Config))
 }
 
 func StoreFromJSON(phs *PostShortenHandlers, c *gin.Context) {
+	s := session.GetSession(c)
 	body := JSONBody{}
 	err := c.ShouldBindJSON(&body)
 	result := JSONResult{}
@@ -67,13 +64,9 @@ func StoreFromJSON(phs *PostShortenHandlers, c *gin.Context) {
 		return
 	}
 
-	shortLink := phs.Storage.Create(body.URL)
+	shortLink := phs.Storage.Create(body.URL, s.UserID)
 
-	shortedLink := fmt.Sprintf(
-		"%s/%s",
-		phs.Config.BaseURL,
-		shortLink,
-	)
+	shortedLink := heplers.PrepareShortLink(shortLink.ShortURL, phs.Config)
 
 	result.Result = shortedLink
 	encode, _ := json.Marshal(result)

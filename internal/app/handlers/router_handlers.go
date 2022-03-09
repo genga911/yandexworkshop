@@ -21,6 +21,11 @@ type (
 		Storage *storages.LinkStorage
 		Config  *config.Params
 	}
+
+	UserHandlers struct {
+		Storage *storages.LinkStorage
+		Config  *config.Params
+	}
 )
 
 func (gh *GetHandlers) GetHandler(c *gin.Context) {
@@ -33,4 +38,8 @@ func (ph *PostHandlers) PostHandler(c *gin.Context) {
 
 func (phs *PostShortenHandlers) PostShortenHandler(c *gin.Context) {
 	StoreFromJSON(phs, c)
+}
+
+func (uh *UserHandlers) Urls(c *gin.Context) {
+	Urls(uh, c)
 }

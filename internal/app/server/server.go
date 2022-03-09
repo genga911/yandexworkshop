@@ -5,6 +5,7 @@ import (
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/handlers"
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
 	"github.com/genga911/yandexworkshop/internal/app/middleware"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
@@ -26,12 +27,19 @@ func SetUpServer() *gin.Engine {
 	getHandlers := handlers.GetHandlers{Storage: store, Config: &cfg}
 	postHandlers := handlers.PostHandlers{Storage: store, Config: &cfg}
 	postShortenHandlers := handlers.PostShortenHandlers{Storage: store, Config: &cfg}
+	userHandlers := handlers.UserHandlers{Storage: store, Config: &cfg}
+	cryptoHelper := heplers.NewHelper(cfg.CookieKey)
 
 	router := gin.Default()
 	router.Use(middleware.Gzip)
 	router.GET("/:code", getHandlers.GetHandler)
-	router.POST("/", postHandlers.PostHandler)
-	router.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
+
+	withAuth := router.Group("/").Use(middleware.Auth(cryptoHelper, &cfg))
+	{
+		withAuth.POST("/", postHandlers.PostHandler)
+		withAuth.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
+		withAuth.GET("/api/user/urls", userHandlers.Urls)
+	}
 
 	err := router.Run(cfg.ServerAddress)
 	if err != nil {

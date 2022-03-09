@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -51,6 +50,7 @@ func testsProvider() []DefaultStoreTest {
 }
 
 func TestStore(t *testing.T) {
+	userID := "test"
 	cfg, _ := config.GetConfig()
 	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
 	var emptyRouterHandler = PostHandlers{Storage: emptyStore, Config: &cfg}
@@ -66,7 +66,7 @@ func TestStore(t *testing.T) {
 				t.Errorf("Ошибка %v", errWrite)
 			}
 
-			c := mocks.MockGinContext(w, r, nil)
+			c := mocks.MockGinContext(userID, w, r, nil)
 
 			Store(&emptyRouterHandler, c)
 			res := w.Result()
@@ -90,6 +90,7 @@ func TestStore(t *testing.T) {
 }
 
 func TestStoreFromJson(t *testing.T) {
+	userID := "test"
 	cfg, _ := config.GetConfig()
 	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
 	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore, Config: &cfg}
@@ -109,7 +110,7 @@ func TestStoreFromJson(t *testing.T) {
 				t.Errorf("Ошибка %v", errWrite)
 			}
 
-			c := mocks.MockGinContext(w, r, nil)
+			c := mocks.MockGinContext(userID, w, r, nil)
 
 			StoreFromJSON(&emptyRouterHandler, c)
 			res := w.Result()
@@ -117,8 +118,6 @@ func TestStoreFromJson(t *testing.T) {
 			if errRead != nil {
 				t.Errorf("Ошибка %v", errRead)
 			}
-
-			fmt.Println(string(body))
 
 			parsedResult := JSONResult{}
 			if unmError := json.Unmarshal(body, &parsedResult); unmError != nil {
