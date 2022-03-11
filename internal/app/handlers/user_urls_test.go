@@ -21,13 +21,13 @@ func TestUrls(t *testing.T) {
 	anotherUserID := "test2"
 
 	cfg, _ := config.GetConfig()
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
 	uh1 := UserHandlers{
 		Storage: emptyStore,
 		Config:  &cfg,
 	}
 
-	var notEmptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var notEmptyStore, _ = storages.CreateStorage(&cfg)
 	linkWithCode := fmt.Sprintf("%s/%s", cfg.BaseURL, "AaSsDd")
 	link := notEmptyStore.Create(linkWithCode, userID)
 	// добавим еще ссылку в нагрузку

@@ -52,7 +52,7 @@ func testsProvider() []DefaultStoreTest {
 func TestStore(t *testing.T) {
 	userID := "test"
 	cfg, _ := config.GetConfig()
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
 	var emptyRouterHandler = PostHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()
@@ -92,7 +92,7 @@ func TestStore(t *testing.T) {
 func TestStoreFromJson(t *testing.T) {
 	userID := "test"
 	cfg, _ := config.GetConfig()
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
 	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()

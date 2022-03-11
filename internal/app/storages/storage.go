@@ -27,9 +27,13 @@ type (
 
 func CreateStorage(cfg *config.Params) (Repository, error) {
 	if cfg.DatabaseDSN != "" {
-		fmt.Println("DB storage was choosen")
-		return CreateDBStorage(cfg)
+		storage, err := CreateDBStorage(cfg)
+		if err == nil {
+			fmt.Println("DB storage was choosen")
+			return storage, nil
+		}
 	}
+
 	fmt.Println("Memory/file storage was choosen")
 	return CreateLinkStorage(cfg)
 }

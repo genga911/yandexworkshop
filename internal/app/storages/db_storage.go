@@ -1,54 +1,195 @@
 package storages
 
 import (
-	"database/sql"
+	"context"
+	"fmt"
 
-	_ "github.com/lib/pq"
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/session"
+	"github.com/jackc/pgx/v4"
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
 )
 
+const LinksTable = "links"
+
 type DBStorage struct {
-	connection *sql.DB
+	connection *pgx.Conn
+}
+
+func (dbs *DBStorage) deleteTable() error {
+	query :=
+		"DROP TABLE IF EXISTS links;"
+
+	_, err := dbs.connection.Exec(context.Background(), query)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (dbs *DBStorage) createTable() error {
+	derr := dbs.deleteTable()
+	if derr != nil {
+		return derr
+	}
+
+	query :=
+		"CREATE TABLE IF NOT EXISTS links (" +
+			"id              SERIAL PRIMARY KEY," +
+			"user_id varchar(255) NOT NULL," +
+			"short_url varchar(255) NOT NULL," +
+			"original_url varchar(255) NOT NULL" +
+			");"
+
+	_, err := dbs.connection.Exec(context.Background(), query)
+	return err
 }
 
 func (dbs *DBStorage) connect(connStr string) error {
-	db, err := sql.Open("postgres", connStr)
+	db, err := pgx.Connect(context.Background(), connStr)
+	if err != nil {
+		return err
+	}
+
+	err = db.Ping(context.Background())
 	if err != nil {
 		return err
 	}
 
 	dbs.connection = db
+
 	return nil
 }
 
 // Создание хранилища
 func CreateDBStorage(cfg *config.Params) (*DBStorage, error) {
 	storage := DBStorage{}
+	// подключимся к БД
 	dbe := storage.connect(cfg.DatabaseDSN)
-	return &storage, dbe
+	if dbe != nil {
+		return nil, dbe
+	}
+
+	// создадим таблицу
+	dbe = storage.createTable()
+	if dbe != nil {
+		return nil, dbe
+	}
+
+	return &storage, nil
 }
 
 // возврат ссылки по значению короткой ссылки
 func (dbs *DBStorage) FindByValue(value string, userID string) Link {
-	return Link{}
+	link := Link{}
+	query := fmt.Sprintf("SELECT short_url, original_url FROM %s WHERE short_url = $1", LinksTable)
+	var args []interface{}
+	args = append(args, value)
+	if userID != session.GuestSession {
+		query += " AND user_id = $2"
+		args = append(args, userID)
+	}
+
+	res := dbs.connection.QueryRow(
+		context.Background(),
+		query,
+		args...,
+	)
+
+	err := res.Scan(&link.ShortURL, &link.OriginalURL)
+	if err != nil {
+		fmt.Println(err)
+		return Link{}
+	}
+
+	return link
 }
 
 // Возврат короткой ссылки по длинной
 func (dbs *DBStorage) FindByKey(key string, userID string) Link {
-	return Link{}
+	link := Link{}
+	query := fmt.Sprintf("SELECT short_url, original_url FROM %s WHERE original_url = $1", LinksTable)
+	var args []interface{}
+	args = append(args, key)
+	if userID != session.GuestSession {
+		query += " AND user_id = $2"
+		args = append(args, userID)
+	}
+
+	res := dbs.connection.QueryRow(
+		context.Background(),
+		query,
+		args...,
+	)
+
+	err := res.Scan(&link.ShortURL, &link.OriginalURL)
+	if err != nil {
+		fmt.Println(err)
+		return Link{}
+	}
+
+	return link
 }
 
 // Создание записи для длинной и короткой ссылок
 func (dbs *DBStorage) Create(key string, userID string) Link {
-	return Link{}
+	shortLink := dbs.FindByKey(key, userID)
+
+	if shortLink.IsEmpty() {
+		shortLink.ShortURL = heplers.ShortCode(8)
+		shortLink.OriginalURL = key
+		_, err := dbs.connection.Exec(
+			context.Background(),
+			fmt.Sprintf("INSERT INTO %s(id, user_id, short_url, original_url) VALUES(DEFAULT, $1, $2, $3)", LinksTable),
+			userID,
+			shortLink.ShortURL,
+			shortLink.OriginalURL,
+		)
+
+		if err != nil {
+			fmt.Println(err)
+			return Link{}
+		}
+	}
+
+	return shortLink
 }
 
 // геттер для стора
 func (dbs *DBStorage) GetAll(userID string) *LinksArray {
-	return &LinksArray{}
+	query := fmt.Sprintf("SELECT short_url, original_url FROM %s", LinksTable)
+	var args []interface{}
+	if userID != session.GuestSession {
+		query += " WHERE user_id = $1"
+		args = append(args, userID)
+	}
+
+	var links LinksArray
+	results, err := dbs.connection.Query(context.Background(), query, args...)
+	if err != nil {
+		fmt.Println(err)
+		return &LinksArray{}
+	}
+
+	defer results.Close()
+
+	for results.Next() {
+		var link Link
+		serr := results.Scan(&link.ShortURL, &link.OriginalURL)
+		if serr != nil {
+			fmt.Println(serr)
+			return &LinksArray{}
+		}
+
+		links.Links = append(links.Links, link)
+	}
+
+	return &links
 }
 
 func (dbs *DBStorage) Ping() error {
-	return dbs.connection.Ping()
+	return dbs.connection.Ping(context.Background())
 }

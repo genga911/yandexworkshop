@@ -18,8 +18,8 @@ func TestResolve(t *testing.T) {
 	userID := "test"
 	cfg, _ := config.GetConfig()
 	linkWithCode := fmt.Sprintf("%s/%s", cfg.BaseURL, "AaSsDd")
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
-	var notEmptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
+	var notEmptyStore, _ = storages.CreateStorage(&cfg)
 
 	var emptyRouterHandler = GetHandlers{Storage: emptyStore, Config: &cfg}
 	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore, Config: &cfg}
@@ -60,7 +60,6 @@ func TestResolve(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			fmt.Println(http.MethodGet, tt.url)
 			r := httptest.NewRequest(http.MethodGet, tt.url, nil)
 
 			var params []gin.Param
