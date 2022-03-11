@@ -15,6 +15,7 @@ type Params struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:""`
 	CookieTTL       int    `env:"COOKIE_TTL" envDefault:"300"`
 	CookieKey       []byte
+	DatabaseDSN     string `env:"DATABASE_DSN" envDefault:""`
 }
 
 func GetConfig() (Params, error) {
@@ -36,6 +37,9 @@ func GetConfig() (Params, error) {
 	}
 	if flag.Lookup("f") == nil {
 		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "a string")
+	}
+	if flag.Lookup("d") == nil {
+		flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "a string")
 	}
 
 	flag.Parse()

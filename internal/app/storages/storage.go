@@ -1,24 +1,18 @@
 package storages
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"os"
-	"strings"
-	"sync"
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
-	"github.com/genga911/yandexworkshop/internal/app/heplers"
-	"github.com/genga911/yandexworkshop/internal/app/session"
 )
 
 type (
 	Repository interface {
-		FindByValue(value string, userID string) string
-		FindByKey(key string, userID string) string
-		Create(key string, userID string) string
+		FindByValue(value string, userID string) Link
+		FindByKey(key string, userID string) Link
+		Create(key string, userID string) Link
 		GetAll(userID string) *LinksArray
+		Ping() error
 	}
 
 	Link struct {
@@ -29,142 +23,13 @@ type (
 	LinksArray struct {
 		Links []Link
 	}
-
-	LinkStorage struct {
-		store      map[string]*LinksArray
-		storeMutex sync.Mutex
-		file       *os.File
-		writer     *bufio.Writer
-	}
 )
 
-func (l *Link) IsEmpty() bool {
-	return l.ShortURL == "" && l.OriginalURL == ""
-}
-
-// Создание пустого хранилища
-func CreateLinkStorage(cfg *config.Params) (*LinkStorage, error) {
-	var ls LinkStorage
-	ls.store = make(map[string]*LinksArray)
-	ls.file = nil
-
-	if cfg.FileStoragePath != "" {
-		var file *os.File
-		// проверим существует ли файл
-		if _, err := os.Stat(cfg.FileStoragePath); err == nil {
-			oFile, openFileError := os.OpenFile(cfg.FileStoragePath, os.O_RDWR, os.ModeAppend)
-			if openFileError != nil {
-				return nil, openFileError
-			}
-			file = oFile
-		} else if errors.Is(err, os.ErrNotExist) {
-			// Создадим файл
-			cFile, createFileError := os.Create(cfg.FileStoragePath)
-			if createFileError != nil {
-				return nil, createFileError
-			}
-			file = cFile
-		} else {
-			// в случае другой ошибки
-			return nil, err
-		}
-
-		ls.file = file
-		ls.writer = bufio.NewWriter(ls.file)
-		ls.loadFromFile()
+func CreateStorage(cfg *config.Params) (Repository, error) {
+	if cfg.DatabaseDSN != "" {
+		fmt.Println("DB storage was choosen")
+		return CreateDBStorage(cfg)
 	}
-
-	return &ls, nil
-}
-
-// возврат ссылки по значению короткой ссылки
-func (ls *LinkStorage) FindByValue(value string, userID string) Link {
-	ls.storeMutex.Lock()
-	defer ls.storeMutex.Unlock()
-	for _, link := range ls.GetAll(userID).Links {
-		if link.ShortURL == value {
-			return link
-		}
-	}
-
-	return Link{}
-}
-
-// Возврат короткой ссылки по длинной
-func (ls *LinkStorage) FindByKey(key string, userID string) Link {
-	ls.storeMutex.Lock()
-	defer ls.storeMutex.Unlock()
-	for _, link := range ls.GetAll(userID).Links {
-		if link.OriginalURL == key {
-			return link
-		}
-	}
-
-	return Link{}
-}
-
-// Создание записи для длинной и короткой ссылок
-func (ls *LinkStorage) Create(key string, userID string) Link {
-	shortLink := ls.FindByKey(key, userID)
-	// Если ключа нет, создадим и сохраним короткую ссылку
-	if shortLink.IsEmpty() {
-		shortLink.ShortURL = heplers.ShortCode(8)
-		shortLink.OriginalURL = key
-		ls.storeMutex.Lock()
-		defer ls.storeMutex.Unlock()
-
-		ls.store[userID].Links = append(ls.store[userID].Links, shortLink)
-		// Если у нас есть файл, допишем ссылку в него
-		if ls.file != nil {
-			appendError := ls.appendToFile(shortLink, userID)
-			if appendError != nil {
-				fmt.Println(appendError)
-			}
-		}
-	}
-
-	return shortLink
-}
-
-// Загрузка map из файла
-func (ls *LinkStorage) loadFromFile() {
-	scanner := bufio.NewScanner(ls.file)
-	for scanner.Scan() {
-		// данные храним в csv, для простоты разделяем через ,
-		s := strings.Split(scanner.Text(), ",")
-		ls.store[s[0]].Links = append(ls.store[s[0]].Links, Link{
-			ShortURL:    s[0],
-			OriginalURL: s[1],
-		})
-	}
-}
-
-// запись в конец файла
-func (ls *LinkStorage) appendToFile(link Link, userID string) error {
-	// чтобы не нагружать память сервера, будем записывать в файл например по 10 записей
-	_, err := ls.file.WriteString(fmt.Sprintf("%s,%s,%s\n", userID, link.ShortURL, link.OriginalURL))
-	return err
-}
-
-// геттер для стора
-func (ls *LinkStorage) GetAll(userID string) *LinksArray {
-	// идентификатор сессии гостя
-	if userID == session.GuestSession {
-		var results []Link
-		for _, links := range ls.store {
-			results = append(results, links.Links...)
-		}
-
-		return &LinksArray{
-			Links: results,
-		}
-	}
-
-	links, exists := ls.store[userID]
-	if !exists {
-		links = &LinksArray{}
-		ls.store[userID] = links
-	}
-
-	return links
+	fmt.Println("Memory/file storage was choosen")
+	return CreateLinkStorage(cfg)
 }

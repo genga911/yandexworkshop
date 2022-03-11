@@ -24,15 +24,24 @@ func SetUpServer() *gin.Engine {
 		panic(storeError)
 	}
 
+	dbstore, dbserror := storages.CreateDBStorage(&cfg)
+	if dbserror != nil {
+		fmt.Println(dbserror)
+		panic(dbserror)
+	}
+
 	getHandlers := handlers.GetHandlers{Storage: store, Config: &cfg}
 	postHandlers := handlers.PostHandlers{Storage: store, Config: &cfg}
 	postShortenHandlers := handlers.PostShortenHandlers{Storage: store, Config: &cfg}
 	userHandlers := handlers.UserHandlers{Storage: store, Config: &cfg}
+	dbHandlers := handlers.DBHandlers{Storage: dbstore, Config: &cfg}
+
 	cryptoHelper := heplers.NewHelper(cfg.CookieKey)
 
 	router := gin.Default()
 	router.Use(middleware.Gzip)
 	router.GET("/:code", getHandlers.GetHandler)
+	router.GET("/ping", dbHandlers.Ping)
 
 	withAuth := router.Group("/").Use(middleware.Auth(cryptoHelper, &cfg))
 	{
