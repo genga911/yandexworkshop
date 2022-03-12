@@ -50,6 +50,7 @@ func SetUpServer() *gin.Engine {
 		withAuth.POST("/", postHandlers.PostHandler)
 		withAuth.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
 		withAuth.GET("/api/user/urls", userHandlers.Urls)
+		withAuth.POST("/api/shorten/batch", postShortenHandlers.PostShortenBatchHandler)
 	}
 
 	err := router.Run(cfg.ServerAddress)

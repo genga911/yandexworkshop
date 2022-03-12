@@ -12,6 +12,16 @@ import (
 )
 
 type (
+	JSONBatch struct {
+		CorrelationID string `json:"correlation_id"`
+		OriginalURL   string `json:"original_url"`
+	}
+
+	JSONBatchResult struct {
+		CorrelationID string `json:"correlation_id"`
+		ShortURL      string `json:"short_url"`
+	}
+
 	JSONBody struct {
 		URL string `from:"url" json:"url" binding:"required"`
 	}
@@ -41,6 +51,50 @@ func Store(ph *PostHandlers, c *gin.Context) {
 	shortLink := ph.Storage.Create(link.String(), s.UserID)
 
 	c.String(http.StatusCreated, heplers.PrepareShortLink(shortLink.ShortURL, ph.Config))
+}
+
+func StoreBatchFromJSON(phs *PostShortenHandlers, c *gin.Context) {
+	s := session.GetSession(c)
+	var body []JSONBatch
+	err := c.ShouldBindJSON(&body)
+
+	var result []JSONBatchResult
+	c.Header(`Content-type`, gin.MIMEJSON)
+
+	if err != nil {
+		encode, _ := json.Marshal(result)
+		c.String(http.StatusBadRequest, string(encode))
+		return
+	}
+
+	shortLinks := make(map[string]string)
+	for _, link := range body {
+		_, validationError := url.ParseRequestURI(link.OriginalURL)
+
+		if validationError != nil {
+			c.JSON(http.StatusBadRequest, validationError)
+			return
+		}
+
+		shortLinks[link.CorrelationID] = link.OriginalURL
+	}
+
+	shortLinks, err = phs.Storage.CreateBatch(shortLinks, s.UserID)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+
+	for key, shorted := range shortLinks {
+		result = append(result, JSONBatchResult{
+			CorrelationID: key,
+			ShortURL:      heplers.PrepareShortLink(shorted, phs.Config),
+		})
+	}
+
+	encode, _ := json.Marshal(result)
+	c.String(http.StatusCreated, string(encode))
 }
 
 func StoreFromJSON(phs *PostShortenHandlers, c *gin.Context) {

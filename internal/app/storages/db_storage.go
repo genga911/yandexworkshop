@@ -3,6 +3,7 @@ package storages
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 	"github.com/genga911/yandexworkshop/internal/app/session"
@@ -41,10 +42,12 @@ func (dbs *DBStorage) createTable() error {
 			"id              SERIAL PRIMARY KEY," +
 			"user_id varchar(255) NOT NULL," +
 			"short_url varchar(255) NOT NULL," +
-			"original_url varchar(255) NOT NULL" +
+			"original_url varchar(255) UNIQUE NOT NULL," +
+			"correlation_id varchar(255) UNIQUE" +
 			");"
 
 	_, err := dbs.connection.Exec(context.Background(), query)
+
 	return err
 }
 
@@ -70,6 +73,7 @@ func CreateDBStorage(cfg *config.Params) (*DBStorage, error) {
 	// подключимся к БД
 	dbe := storage.connect(cfg.DatabaseDSN)
 	if dbe != nil {
+		fmt.Println(dbe)
 		return nil, dbe
 	}
 
@@ -167,6 +171,8 @@ func (dbs *DBStorage) GetAll(userID string) *LinksArray {
 		args = append(args, userID)
 	}
 
+	query += " ORDER BY correlation_id ASC"
+
 	var links LinksArray
 	results, err := dbs.connection.Query(context.Background(), query, args...)
 	if err != nil {
@@ -188,6 +194,29 @@ func (dbs *DBStorage) GetAll(userID string) *LinksArray {
 	}
 
 	return &links
+}
+
+func (dbs *DBStorage) CreateBatch(batch map[string]string, userID string) (map[string]string, error) {
+	query := fmt.Sprintf("INSERT INTO %s(id, user_id, short_url, original_url, correlation_id) VALUES", LinksTable)
+	var args []interface{}
+	result := make(map[string]string)
+	for key, link := range batch {
+		shortCode := heplers.ShortCode(8)
+		args = append(args, userID, shortCode, link, key)
+		l := len(args)
+		// конструктор не хочет работать с ? придется использовать $n
+		query += fmt.Sprintf("(DEFAULT, $%d, $%d, $%d, $%d),", l-3, l-2, l-1, l)
+		result[key] = shortCode
+	}
+	query = strings.Trim(query, ",") + " ON CONFLICT ON CONSTRAINT links_original_url_key DO NOTHING;"
+
+	_, err := dbs.connection.Exec(context.Background(), query, args...)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (dbs *DBStorage) Ping() error {

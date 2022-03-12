@@ -151,6 +151,15 @@ func (ls *LinkStorage) GetAll(userID string) *LinksArray {
 	return links
 }
 
+func (ls *LinkStorage) CreateBatch(batch map[string]string, userID string) (map[string]string, error) {
+	for key, link := range batch {
+		created := ls.Create(link, userID)
+		batch[key] = created.ShortURL
+	}
+
+	return batch, nil
+}
+
 func (ls *LinkStorage) Ping() error {
 	return nil
 }

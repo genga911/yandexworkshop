@@ -13,11 +13,13 @@ type (
 		Create(key string, userID string) Link
 		GetAll(userID string) *LinksArray
 		Ping() error
+		CreateBatch(batch map[string]string, userID string) (map[string]string, error)
 	}
 
 	Link struct {
-		ShortURL    string `json:"short_url"`
-		OriginalURL string `json:"original_url"`
+		ShortURL      string `json:"short_url"`
+		OriginalURL   string `json:"original_url"`
+		CorrelationID string `json:"correlation_id"`
 	}
 
 	LinksArray struct {

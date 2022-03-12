@@ -48,6 +48,10 @@ func (phs *PostShortenHandlers) PostShortenHandler(c *gin.Context) {
 	StoreFromJSON(phs, c)
 }
 
+func (phs *PostShortenHandlers) PostShortenBatchHandler(c *gin.Context) {
+	StoreBatchFromJSON(phs, c)
+}
+
 func (uh *UserHandlers) Urls(c *gin.Context) {
 	Urls(uh, c)
 }
