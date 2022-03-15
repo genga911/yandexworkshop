@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -173,6 +175,10 @@ func TestStoreBatchFromJSON(t *testing.T) {
 			},
 		},
 	}
+
+	waitingArray := []string{"test", "test2"}
+	sort.Strings(waitingArray)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -201,9 +207,12 @@ func TestStoreBatchFromJSON(t *testing.T) {
 				t.Errorf("Ошибка %v", unmError)
 			}
 
-			for index, res := range parsedResult {
-				assert.Equal(t, res.CorrelationID, tt.request[index].CorrelationID)
+			gotArray := []string{}
+			for _, res := range parsedResult {
+				gotArray = append(gotArray, res.CorrelationID)
 			}
+			sort.Strings(gotArray)
+			assert.True(t, reflect.DeepEqual(waitingArray, gotArray))
 
 			errBodyClose := res.Body.Close()
 			if errBodyClose != nil {

@@ -10,7 +10,7 @@ type (
 	Repository interface {
 		FindByValue(value string, userID string) Link
 		FindByKey(key string, userID string) Link
-		Create(key string, userID string) Link
+		Create(key string, userID string) (Link, error)
 		GetAll(userID string) *LinksArray
 		Ping() error
 		CreateBatch(batch map[string]string, userID string) (map[string]string, error)

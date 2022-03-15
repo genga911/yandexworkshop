@@ -29,7 +29,7 @@ func TestUrls(t *testing.T) {
 
 	var notEmptyStore, _ = storages.CreateStorage(&cfg)
 	linkWithCode := fmt.Sprintf("%s/%s", cfg.BaseURL, "AaSsDd")
-	link := notEmptyStore.Create(linkWithCode, userID)
+	link, _ := notEmptyStore.Create(linkWithCode, userID)
 	// добавим еще ссылку в нагрузку
 	notEmptyStore.Create(linkWithCode, anotherUserID)
 	uh2 := UserHandlers{

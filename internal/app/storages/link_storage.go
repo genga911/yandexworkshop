@@ -86,7 +86,8 @@ func (ls *LinkStorage) FindByKey(key string, userID string) Link {
 }
 
 // Создание записи для длинной и короткой ссылок
-func (ls *LinkStorage) Create(key string, userID string) Link {
+func (ls *LinkStorage) Create(key string, userID string) (Link, error) {
+	var err error
 	shortLink := ls.FindByKey(key, userID)
 	// Если ключа нет, создадим и сохраним короткую ссылку
 	if shortLink.IsEmpty() {
@@ -98,14 +99,11 @@ func (ls *LinkStorage) Create(key string, userID string) Link {
 		ls.store[userID].Links = append(ls.store[userID].Links, shortLink)
 		// Если у нас есть файл, допишем ссылку в него
 		if ls.file != nil {
-			appendError := ls.appendToFile(shortLink, userID)
-			if appendError != nil {
-				fmt.Println(appendError)
-			}
+			err = ls.appendToFile(shortLink, userID)
 		}
 	}
 
-	return shortLink
+	return shortLink, err
 }
 
 // Загрузка map из файла
@@ -153,7 +151,10 @@ func (ls *LinkStorage) GetAll(userID string) *LinksArray {
 
 func (ls *LinkStorage) CreateBatch(batch map[string]string, userID string) (map[string]string, error) {
 	for key, link := range batch {
-		created := ls.Create(link, userID)
+		created, err := ls.Create(link, userID)
+		if err != nil {
+			return nil, err
+		}
 		batch[key] = created.ShortURL
 	}
 

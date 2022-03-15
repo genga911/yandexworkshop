@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -9,6 +11,8 @@ import (
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 	"github.com/genga911/yandexworkshop/internal/app/session"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 )
 
 type (
@@ -34,6 +38,7 @@ type (
 
 // cохранение нового урла в хранилище
 func Store(ph *PostHandlers, c *gin.Context) {
+	status := http.StatusCreated
 	s := session.GetSession(c)
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -48,9 +53,21 @@ func Store(ph *PostHandlers, c *gin.Context) {
 		return
 	}
 
-	shortLink := ph.Storage.Create(link.String(), s.UserID)
+	shortLink, createError := ph.Storage.Create(link.String(), s.UserID)
+	if createError != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(createError, &pgErr) {
+			if pgErr.Code == pgerrcode.UniqueViolation {
+				shortLink = ph.Storage.FindByKey(link.String(), s.UserID)
+				status = http.StatusConflict
+			}
+		} else {
+			c.String(http.StatusBadRequest, createError.Error())
+			return
+		}
+	}
 
-	c.String(http.StatusCreated, heplers.PrepareShortLink(shortLink.ShortURL, ph.Config))
+	c.String(status, heplers.PrepareShortLink(shortLink.ShortURL, ph.Config))
 }
 
 func StoreBatchFromJSON(phs *PostShortenHandlers, c *gin.Context) {
@@ -99,6 +116,7 @@ func StoreBatchFromJSON(phs *PostShortenHandlers, c *gin.Context) {
 
 func StoreFromJSON(phs *PostShortenHandlers, c *gin.Context) {
 	s := session.GetSession(c)
+	status := http.StatusCreated
 	body := JSONBody{}
 	err := c.ShouldBindJSON(&body)
 	result := JSONResult{}
@@ -118,11 +136,24 @@ func StoreFromJSON(phs *PostShortenHandlers, c *gin.Context) {
 		return
 	}
 
-	shortLink := phs.Storage.Create(body.URL, s.UserID)
+	shortLink, createError := phs.Storage.Create(body.URL, s.UserID)
+	fmt.Println(createError)
+	if createError != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(createError, &pgErr) {
+			if pgErr.Code == pgerrcode.UniqueViolation {
+				shortLink = phs.Storage.FindByKey(body.URL, s.UserID)
+				status = http.StatusConflict
+			}
+		} else {
+			c.JSON(http.StatusBadRequest, createError)
+			return
+		}
+	}
 
 	shortedLink := heplers.PrepareShortLink(shortLink.ShortURL, phs.Config)
 
 	result.Result = shortedLink
 	encode, _ := json.Marshal(result)
-	c.String(http.StatusCreated, string(encode))
+	c.String(status, string(encode))
 }

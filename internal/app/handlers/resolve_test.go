@@ -24,7 +24,7 @@ func TestResolve(t *testing.T) {
 	var emptyRouterHandler = GetHandlers{Storage: emptyStore, Config: &cfg}
 	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore, Config: &cfg}
 
-	link := notEmptyStore.Create(linkWithCode, userID)
+	link, _ := notEmptyStore.Create(linkWithCode, userID)
 
 	linkWithCode = fmt.Sprintf("%s/%s", cfg.BaseURL, link.ShortURL)
 

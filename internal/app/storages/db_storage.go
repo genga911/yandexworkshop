@@ -139,27 +139,23 @@ func (dbs *DBStorage) FindByKey(key string, userID string) Link {
 }
 
 // Создание записи для длинной и короткой ссылок
-func (dbs *DBStorage) Create(key string, userID string) Link {
-	shortLink := dbs.FindByKey(key, userID)
+func (dbs *DBStorage) Create(key string, userID string) (Link, error) {
+	shortLink := Link{}
+	shortLink.ShortURL = heplers.ShortCode(8)
+	shortLink.OriginalURL = key
+	_, err := dbs.connection.Exec(
+		context.Background(),
+		fmt.Sprintf("INSERT INTO %s(id, user_id, short_url, original_url) VALUES(DEFAULT, $1, $2, $3)", LinksTable),
+		userID,
+		shortLink.ShortURL,
+		shortLink.OriginalURL,
+	)
 
-	if shortLink.IsEmpty() {
-		shortLink.ShortURL = heplers.ShortCode(8)
-		shortLink.OriginalURL = key
-		_, err := dbs.connection.Exec(
-			context.Background(),
-			fmt.Sprintf("INSERT INTO %s(id, user_id, short_url, original_url) VALUES(DEFAULT, $1, $2, $3)", LinksTable),
-			userID,
-			shortLink.ShortURL,
-			shortLink.OriginalURL,
-		)
-
-		if err != nil {
-			fmt.Println(err)
-			return Link{}
-		}
+	if err != nil {
+		return Link{}, err
 	}
 
-	return shortLink
+	return shortLink, nil
 }
 
 // геттер для стора
