@@ -28,14 +28,18 @@ func Resolve(gh *GetHandlers, c *gin.Context) {
 		// проверим что ссылка есть в Storage
 		finded := gh.Storage.FindByValue(shortLink, s.UserID)
 		if !finded.IsEmpty() {
-			code = http.StatusTemporaryRedirect
-			link = finded.OriginalURL
+			if finded.IsDeleted {
+				code = http.StatusGone
+			} else {
+				code = http.StatusTemporaryRedirect
+				link = finded.OriginalURL
+			}
 		}
 	}
 
-	if code != http.StatusNotFound {
+	if code == http.StatusTemporaryRedirect {
 		c.Redirect(code, link)
 	} else {
-		c.Status(http.StatusNotFound)
+		c.Status(code)
 	}
 }

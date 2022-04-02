@@ -164,3 +164,7 @@ func (ls *LinkStorage) CreateBatch(batch map[string]string, userID string) (map[
 func (ls *LinkStorage) Ping() error {
 	return nil
 }
+
+func (ls *LinkStorage) Delete(IDS []string, userID string) error {
+	return nil
+}

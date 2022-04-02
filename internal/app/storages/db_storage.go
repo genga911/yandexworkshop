@@ -43,7 +43,8 @@ func (dbs *DBStorage) createTable() error {
 			"user_id varchar(255) NOT NULL," +
 			"short_url varchar(255) NOT NULL," +
 			"original_url varchar(255) UNIQUE NOT NULL," +
-			"correlation_id varchar(255) UNIQUE" +
+			"correlation_id varchar(255) UNIQUE, " +
+			"is_deleted boolean DEFAULT false NOT NULL" +
 			");"
 
 	_, err := dbs.connection.Exec(context.Background(), query)
@@ -89,7 +90,7 @@ func CreateDBStorage(cfg *config.Params) (*DBStorage, error) {
 // возврат ссылки по значению короткой ссылки
 func (dbs *DBStorage) FindByValue(value string, userID string) Link {
 	link := Link{}
-	query := fmt.Sprintf("SELECT short_url, original_url FROM %s WHERE short_url = $1", LinksTable)
+	query := fmt.Sprintf("SELECT short_url, original_url, is_deleted FROM %s WHERE short_url = $1", LinksTable)
 	var args []interface{}
 	args = append(args, value)
 	if userID != session.GuestSession {
@@ -103,7 +104,7 @@ func (dbs *DBStorage) FindByValue(value string, userID string) Link {
 		args...,
 	)
 
-	err := res.Scan(&link.ShortURL, &link.OriginalURL)
+	err := res.Scan(&link.ShortURL, &link.OriginalURL, &link.IsDeleted)
 	if err != nil {
 		fmt.Println(err)
 		return Link{}
@@ -115,7 +116,7 @@ func (dbs *DBStorage) FindByValue(value string, userID string) Link {
 // Возврат короткой ссылки по длинной
 func (dbs *DBStorage) FindByKey(key string, userID string) Link {
 	link := Link{}
-	query := fmt.Sprintf("SELECT short_url, original_url FROM %s WHERE original_url = $1", LinksTable)
+	query := fmt.Sprintf("SELECT short_url, original_url, is_deleted FROM %s WHERE original_url = $1", LinksTable)
 	var args []interface{}
 	args = append(args, key)
 	if userID != session.GuestSession {
@@ -129,7 +130,7 @@ func (dbs *DBStorage) FindByKey(key string, userID string) Link {
 		args...,
 	)
 
-	err := res.Scan(&link.ShortURL, &link.OriginalURL)
+	err := res.Scan(&link.ShortURL, &link.OriginalURL, &link.IsDeleted)
 	if err != nil {
 		fmt.Println(err)
 		return Link{}
@@ -160,7 +161,7 @@ func (dbs *DBStorage) Create(key string, userID string) (Link, error) {
 
 // геттер для стора
 func (dbs *DBStorage) GetAll(userID string) *LinksArray {
-	query := fmt.Sprintf("SELECT short_url, original_url FROM %s", LinksTable)
+	query := fmt.Sprintf("SELECT short_url, original_url, is_deleted FROM %s", LinksTable)
 	var args []interface{}
 	if userID != session.GuestSession {
 		query += " WHERE user_id = $1"
@@ -180,7 +181,7 @@ func (dbs *DBStorage) GetAll(userID string) *LinksArray {
 
 	for results.Next() {
 		var link Link
-		serr := results.Scan(&link.ShortURL, &link.OriginalURL)
+		serr := results.Scan(&link.ShortURL, &link.OriginalURL, &link.IsDeleted)
 		if serr != nil {
 			fmt.Println(serr)
 			return &LinksArray{}
@@ -217,4 +218,10 @@ func (dbs *DBStorage) CreateBatch(batch map[string]string, userID string) (map[s
 
 func (dbs *DBStorage) Ping() error {
 	return dbs.connection.Ping(context.Background())
+}
+
+func (dbs *DBStorage) Delete(IDS []string, userID string) error {
+	query := fmt.Sprintf("UPDATE %s SET is_deleted=true WHERE user_id=$1 AND correlation_id IS NOT NULL AND correlation_id = any($2)", LinksTable)
+	_, err := dbs.connection.Exec(context.Background(), query, userID, IDS)
+	return err
 }

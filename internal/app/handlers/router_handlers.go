@@ -25,6 +25,11 @@ type (
 		Config  *config.Params
 	}
 
+	DeleteHandlers struct {
+		Storage storages.Repository
+		Config  *config.Params
+	}
+
 	PostShortenHandlers struct {
 		Storage storages.Repository
 		Config  *config.Params
@@ -54,6 +59,10 @@ func (phs *PostShortenHandlers) PostShortenBatchHandler(c *gin.Context) {
 
 func (uh *UserHandlers) Urls(c *gin.Context) {
 	Urls(uh, c)
+}
+
+func (dh *DeleteHandlers) Delete(c *gin.Context) {
+	Delete(dh, c)
 }
 
 func (dbh *DBHandlers) Ping(c *gin.Context) {
