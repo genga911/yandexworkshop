@@ -221,7 +221,7 @@ func (dbs *DBStorage) Ping() error {
 }
 
 func (dbs *DBStorage) Delete(IDS []string, userID string) error {
-	query := fmt.Sprintf("UPDATE %s SET is_deleted=true WHERE user_id=$1 AND correlation_id IS NOT NULL AND correlation_id = any($2)", LinksTable)
+	query := fmt.Sprintf("UPDATE %s SET is_deleted=true WHERE user_id=$1 AND id = any($2)", LinksTable)
 	_, err := dbs.connection.Exec(context.Background(), query, userID, IDS)
 	return err
 }
