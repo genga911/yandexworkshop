@@ -2,9 +2,11 @@ package heplers
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"regexp"
 
+	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,4 +20,12 @@ func GetShortLink(c *gin.Context) (string, error) {
 	}
 
 	return path.Base(url), nil
+}
+
+func PrepareShortLink(code string, cfg *config.Params) string {
+	return fmt.Sprintf(
+		"%s/%s",
+		cfg.BaseURL,
+		code,
+	)
 }

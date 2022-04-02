@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -51,8 +52,9 @@ func testsProvider() []DefaultStoreTest {
 }
 
 func TestStore(t *testing.T) {
+	userID := "test"
 	cfg, _ := config.GetConfig()
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
 	var emptyRouterHandler = PostHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()
@@ -66,7 +68,7 @@ func TestStore(t *testing.T) {
 				t.Errorf("Ошибка %v", errWrite)
 			}
 
-			c := mocks.MockGinContext(w, r, nil)
+			c := mocks.MockGinContext(userID, w, r, nil)
 
 			Store(&emptyRouterHandler, c)
 			res := w.Result()
@@ -90,8 +92,9 @@ func TestStore(t *testing.T) {
 }
 
 func TestStoreFromJson(t *testing.T) {
+	userID := "test"
 	cfg, _ := config.GetConfig()
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
 	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore, Config: &cfg}
 
 	tests := testsProvider()
@@ -109,7 +112,7 @@ func TestStoreFromJson(t *testing.T) {
 				t.Errorf("Ошибка %v", errWrite)
 			}
 
-			c := mocks.MockGinContext(w, r, nil)
+			c := mocks.MockGinContext(userID, w, r, nil)
 
 			StoreFromJSON(&emptyRouterHandler, c)
 			res := w.Result()
@@ -117,8 +120,6 @@ func TestStoreFromJson(t *testing.T) {
 			if errRead != nil {
 				t.Errorf("Ошибка %v", errRead)
 			}
-
-			fmt.Println(string(body))
 
 			parsedResult := JSONResult{}
 			if unmError := json.Unmarshal(body, &parsedResult); unmError != nil {
@@ -135,6 +136,88 @@ func TestStoreFromJson(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
+		})
+	}
+}
+
+func TestStoreBatchFromJSON(t *testing.T) {
+	userID := "test"
+	cfg, _ := config.GetConfig()
+	var emptyStore, _ = storages.CreateStorage(&cfg)
+	var emptyRouterHandler = PostShortenHandlers{Storage: emptyStore, Config: &cfg}
+
+	tests := []struct {
+		name    string
+		request []JSONBatch
+		want    []JSONBatchResult
+	}{
+		{
+			name: "Батч запрос",
+			request: []JSONBatch{
+				{
+					CorrelationID: "test",
+					OriginalURL:   "http://example.com",
+				},
+				{
+					CorrelationID: "test2",
+					OriginalURL:   "http://example2.com",
+				},
+			},
+			want: []JSONBatchResult{
+				{
+					CorrelationID: "test",
+					ShortURL:      "",
+				},
+				{
+					CorrelationID: "test",
+					ShortURL:      "",
+				},
+			},
+		},
+	}
+
+	waitingArray := []string{"test", "test2"}
+	sort.Strings(waitingArray)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+
+			requestBody := tt.request
+			jsonString, _ := json.Marshal(requestBody)
+			reader := strings.NewReader(string(jsonString))
+
+			r, errWrite := http.NewRequest(http.MethodPost, cfg.BaseURL+"/api/shorten/batch", reader)
+			if errWrite != nil {
+				t.Errorf("Ошибка %v", errWrite)
+			}
+
+			c := mocks.MockGinContext(userID, w, r, nil)
+
+			StoreBatchFromJSON(&emptyRouterHandler, c)
+
+			res := w.Result()
+			body, errRead := ioutil.ReadAll(res.Body)
+			if errRead != nil {
+				t.Errorf("Ошибка %v", errRead)
+			}
+
+			var parsedResult []JSONBatchResult
+			if unmError := json.Unmarshal(body, &parsedResult); unmError != nil {
+				t.Errorf("Ошибка %v", unmError)
+			}
+
+			gotArray := []string{}
+			for _, res := range parsedResult {
+				gotArray = append(gotArray, res.CorrelationID)
+			}
+			sort.Strings(gotArray)
+			assert.True(t, reflect.DeepEqual(waitingArray, gotArray))
+
+			errBodyClose := res.Body.Close()
+			if errBodyClose != nil {
+				t.Errorf("Ошибка %v", errBodyClose)
+			}
 		})
 	}
 }

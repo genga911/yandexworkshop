@@ -1,10 +1,13 @@
 package server
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
 	"github.com/genga911/yandexworkshop/internal/app/handlers"
+	"github.com/genga911/yandexworkshop/internal/app/heplers"
+	"github.com/genga911/yandexworkshop/internal/app/middleware"
 	"github.com/genga911/yandexworkshop/internal/app/storages"
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +19,14 @@ func SetUpServer() *gin.Engine {
 		panic(cfgError)
 	}
 
-	store, storeError := storages.CreateLinkStorage(&cfg)
+	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "a  string")
+	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "b  string")
+	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "f  string")
+	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "d  string")
+	flag.StringVar(&cfg.DatabaseDSN, "database-dsn", cfg.DatabaseDSN, "d string")
+	flag.Parse()
+
+	store, storeError := storages.CreateStorage(&cfg)
 	if storeError != nil {
 		fmt.Println(storeError)
 		panic(storeError)
@@ -25,11 +35,25 @@ func SetUpServer() *gin.Engine {
 	getHandlers := handlers.GetHandlers{Storage: store, Config: &cfg}
 	postHandlers := handlers.PostHandlers{Storage: store, Config: &cfg}
 	postShortenHandlers := handlers.PostShortenHandlers{Storage: store, Config: &cfg}
+	userHandlers := handlers.UserHandlers{Storage: store, Config: &cfg}
+	dbHandlers := handlers.DBHandlers{Storage: store, Config: &cfg}
+	deleteHandlers := handlers.DeleteHandlers{Storage: store, Config: &cfg}
+
+	cryptoHelper := heplers.NewHelper([]byte(cfg.CookieKey))
 
 	router := gin.Default()
+	router.Use(middleware.Gzip)
 	router.GET("/:code", getHandlers.GetHandler)
-	router.POST("/", postHandlers.PostHandler)
-	router.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
+	router.GET("/ping", dbHandlers.Ping)
+
+	withAuth := router.Group("/").Use(middleware.Auth(cryptoHelper, &cfg))
+	{
+		withAuth.POST("/", postHandlers.PostHandler)
+		withAuth.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
+		withAuth.GET("/api/user/urls", userHandlers.Urls)
+		withAuth.POST("/api/shorten/batch", postShortenHandlers.PostShortenBatchHandler)
+		withAuth.DELETE("/api/user/urls", deleteHandlers.Delete)
+	}
 
 	err := router.Run(cfg.ServerAddress)
 	if err != nil {

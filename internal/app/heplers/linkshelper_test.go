@@ -11,6 +11,7 @@ import (
 )
 
 func TestGetShortLink(t *testing.T) {
+	userID := "test"
 	tests := []struct {
 		name string
 		url  string
@@ -59,7 +60,7 @@ func TestGetShortLink(t *testing.T) {
 				Value: tt.code,
 			})
 
-			c := mocks.MockGinContext(w, r, params)
+			c := mocks.MockGinContext(userID, w, r, params)
 
 			res, err := GetShortLink(c)
 

@@ -15,43 +15,45 @@ import (
 )
 
 func TestResolve(t *testing.T) {
+	userID := "test"
 	cfg, _ := config.GetConfig()
 	linkWithCode := fmt.Sprintf("%s/%s", cfg.BaseURL, "AaSsDd")
-	var emptyStore, _ = storages.CreateLinkStorage(&cfg)
-	var notEmptyStore, _ = storages.CreateLinkStorage(&cfg)
+	var emptyStore, _ = storages.CreateStorage(&cfg)
+	var notEmptyStore, _ = storages.CreateStorage(&cfg)
 
 	var emptyRouterHandler = GetHandlers{Storage: emptyStore, Config: &cfg}
 	var notEmptyRouterHandler = GetHandlers{Storage: notEmptyStore, Config: &cfg}
 
-	code := notEmptyStore.Create(linkWithCode)
-	linkWithCode = fmt.Sprintf("%s/%s", cfg.BaseURL, code)
+	link, _ := notEmptyStore.Create(linkWithCode, userID)
+
+	linkWithCode = fmt.Sprintf("%s/%s", cfg.BaseURL, link.ShortURL)
 
 	tests := []struct {
 		name string
 		want int
 		url  string
-		code string
+		link storages.Link
 		rh   *GetHandlers
 	}{
 		{
 			name: "Нет ссылки в URL",
 			want: http.StatusBadRequest,
 			url:  cfg.BaseURL,
-			code: "",
+			link: storages.Link{},
 			rh:   &emptyRouterHandler,
 		},
 		{
 			name: "Ссылка в URL не корректного формата",
 			want: http.StatusBadRequest,
 			url:  fmt.Sprintf("%s/%s", cfg.BaseURL, "/123456/789"),
-			code: "",
+			link: storages.Link{},
 			rh:   &emptyRouterHandler,
 		},
 		{
 			name: "Ссылка в URL корректного формата",
 			want: http.StatusTemporaryRedirect,
 			url:  linkWithCode,
-			code: code,
+			link: link,
 			rh:   &notEmptyRouterHandler,
 		},
 	}
@@ -63,10 +65,10 @@ func TestResolve(t *testing.T) {
 			var params []gin.Param
 			params = append(params, gin.Param{
 				Key:   "code",
-				Value: tt.code,
+				Value: tt.link.ShortURL,
 			})
 
-			c := mocks.MockGinContext(w, r, params)
+			c := mocks.MockGinContext(userID, w, r, params)
 			Resolve(tt.rh, c)
 			res := w.Result()
 
