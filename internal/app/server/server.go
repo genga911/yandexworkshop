@@ -37,6 +37,7 @@ func SetUpServer() *gin.Engine {
 	postShortenHandlers := handlers.PostShortenHandlers{Storage: store, Config: &cfg}
 	userHandlers := handlers.UserHandlers{Storage: store, Config: &cfg}
 	dbHandlers := handlers.DBHandlers{Storage: store, Config: &cfg}
+	deleteHandlers := handlers.DeleteHandlers{Storage: store, Config: &cfg}
 
 	cryptoHelper := heplers.NewHelper([]byte(cfg.CookieKey))
 
@@ -51,6 +52,7 @@ func SetUpServer() *gin.Engine {
 		withAuth.POST("/api/shorten", postShortenHandlers.PostShortenHandler)
 		withAuth.GET("/api/user/urls", userHandlers.Urls)
 		withAuth.POST("/api/shorten/batch", postShortenHandlers.PostShortenBatchHandler)
+		withAuth.DELETE("/api/user/urls", deleteHandlers.Delete)
 	}
 
 	err := router.Run(cfg.ServerAddress)

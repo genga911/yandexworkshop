@@ -1,8 +1,6 @@
 package session
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +20,6 @@ func GetSession(c *gin.Context) *session {
 	s, exist := c.Get("session")
 
 	if !exist {
-		fmt.Println("Сессия не найдена, пользователь зашел как гость")
 		return &session{
 			UserID: GuestSession,
 		}

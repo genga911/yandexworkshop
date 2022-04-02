@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
@@ -33,4 +35,32 @@ func Urls(uh *UserHandlers, c *gin.Context) {
 	}
 
 	c.JSON(status, result)
+}
+
+func Delete(dh *DeleteHandlers, c *gin.Context) {
+	s := session.GetSession(c)
+	var IDS []string
+
+	// получаем тело
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	// декодируем в массив строк
+	err = json.Unmarshal(body, &IDS)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	// выполняем soft-delete
+	err = dh.Storage.Delete(IDS, s.UserID)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	c.String(http.StatusAccepted, "")
 }

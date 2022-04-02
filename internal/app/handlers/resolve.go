@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
@@ -17,7 +16,6 @@ func Resolve(gh *GetHandlers, c *gin.Context) {
 	// поумолчанию выставим код 404
 	code := http.StatusNotFound
 	shortLink, err := heplers.GetShortLink(c)
-	fmt.Println(err)
 	// в случае ошибки отправим пользователю 400 код и редиректим его на главную
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
@@ -28,14 +26,18 @@ func Resolve(gh *GetHandlers, c *gin.Context) {
 		// проверим что ссылка есть в Storage
 		finded := gh.Storage.FindByValue(shortLink, s.UserID)
 		if !finded.IsEmpty() {
-			code = http.StatusTemporaryRedirect
-			link = finded.OriginalURL
+			if finded.IsDeleted {
+				code = http.StatusGone
+			} else {
+				code = http.StatusTemporaryRedirect
+				link = finded.OriginalURL
+			}
 		}
 	}
 
-	if code != http.StatusNotFound {
+	if code == http.StatusTemporaryRedirect {
 		c.Redirect(code, link)
 	} else {
-		c.Status(http.StatusNotFound)
+		c.Status(code)
 	}
 }

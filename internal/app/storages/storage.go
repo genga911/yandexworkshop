@@ -14,12 +14,14 @@ type (
 		GetAll(userID string) *LinksArray
 		Ping() error
 		CreateBatch(batch map[string]string, userID string) (map[string]string, error)
+		Delete(IDS []string, userID string) error
 	}
 
 	Link struct {
 		ShortURL      string `json:"short_url"`
 		OriginalURL   string `json:"original_url"`
 		CorrelationID string `json:"correlation_id"`
+		IsDeleted     bool
 	}
 
 	LinksArray struct {
@@ -33,6 +35,8 @@ func CreateStorage(cfg *config.Params) (Repository, error) {
 		if err == nil {
 			fmt.Println("DB storage was choosen")
 			return storage, nil
+		} else {
+			fmt.Println(err)
 		}
 	}
 
