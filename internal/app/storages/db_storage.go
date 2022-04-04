@@ -7,6 +7,7 @@ import (
 
 	"github.com/genga911/yandexworkshop/internal/app/heplers"
 	"github.com/genga911/yandexworkshop/internal/app/session"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 
 	"github.com/genga911/yandexworkshop/internal/app/config"
@@ -221,7 +222,13 @@ func (dbs *DBStorage) Ping() error {
 }
 
 func (dbs *DBStorage) Delete(IDS []string, userID string) error {
-	query := fmt.Sprintf("UPDATE %s SET is_deleted=true WHERE user_id=$1 AND id = any($2)", LinksTable)
-	_, err := dbs.connection.Exec(context.Background(), query, userID, IDS)
+	var err error
+	preparedIDs := &pgtype.TextArray{}
+	err = preparedIDs.Set(IDS)
+	if err != nil {
+		return err
+	}
+	query := fmt.Sprintf("UPDATE %s SET is_deleted=true WHERE user_id=$1 AND short_url = any($2)", LinksTable)
+	_, err = dbs.connection.Exec(context.Background(), query, userID, preparedIDs)
 	return err
 }
