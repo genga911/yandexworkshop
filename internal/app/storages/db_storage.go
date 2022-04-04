@@ -230,6 +230,5 @@ func (dbs *DBStorage) Delete(IDS []string, userID string) error {
 	}
 	query := fmt.Sprintf("UPDATE %s SET is_deleted=true WHERE user_id=$1 AND short_url = any($2)", LinksTable)
 	_, err = dbs.connection.Exec(context.Background(), query, userID, preparedIDs)
-
 	return err
 }
